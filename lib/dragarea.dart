@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 class CustomPainterDraggable extends StatefulWidget {
   @override
@@ -12,9 +13,10 @@ class CustomPainterDraggable extends StatefulWidget {
 class _CustomPainterDraggableState extends State<CustomPainterDraggable> {
   var xPos = 0.0;
   var yPos = 0.0;
-  final width = 256.0;
-  final height = 256.0;
+  final width = 439.0;
+  final height = 535.0;
   bool _dragging = false;
+  double _size = 100;
   ui.Image _image;
 
   @override
@@ -23,7 +25,7 @@ class _CustomPainterDraggableState extends State<CustomPainterDraggable> {
   }
 
   _loadImage() async {
-    ByteData bd = await rootBundle.load("assets/resource/icon.png");
+    ByteData bd = await rootBundle.load("assets/resource/face.jpg");
 
     final Uint8List bytes = Uint8List.view(bd.buffer);
 
@@ -39,7 +41,7 @@ class _CustomPainterDraggableState extends State<CustomPainterDraggable> {
       x >= xPos && x <= xPos + width && y >= yPos && y <= yPos + height;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build2(BuildContext context) {
     return GestureDetector(
       onPanStart: (details) => _dragging = _insideRect(
         details.globalPosition.dx,
@@ -57,11 +59,69 @@ class _CustomPainterDraggableState extends State<CustomPainterDraggable> {
         }
       },
       child: Container(
-        color: Colors.red,
+        color: Colors.white,
         child: CustomPaint(
           //painter: RectanglePainter(Rect.fromLTWH(xPos, yPos, width, height)),
           painter: ImageEditor(_image, xPos, yPos),
           child: Container(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: GestureDetector(
+                onPanStart: (details) => _dragging = _insideRect(
+                  details.globalPosition.dx,
+                  details.globalPosition.dy,
+                ),
+                onPanEnd: (details) {
+                  _dragging = false;
+                },
+                onPanUpdate: (details) {
+                  if (_dragging) {
+                    setState(() {
+                      xPos += details.delta.dx;
+                      yPos += details.delta.dy;
+                    });
+                  }
+                },
+                child: new Transform(
+                    transform: new Matrix4.diagonal3(new vector.Vector3(
+                        _size / 100, _size / 100, _size / 100)),
+                    alignment: FractionalOffset.center,
+                    child: Container(
+                      color: Colors.white,
+                      child: CustomPaint(
+                        //painter: RectanglePainter(Rect.fromLTWH(xPos, yPos, width, height)),
+                        painter: ImageEditor(_image, xPos, yPos),
+                        child: Container(),
+                      ),
+                    )),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text('Size'),
+            ),
+            Slider(
+              value: _size,
+              min: 50,
+              max: 500,
+              onChanged: (value) {
+                setState(() {
+                  _size = value;
+                });
+              },
+            ),
+          ],
         ),
       ),
     );
